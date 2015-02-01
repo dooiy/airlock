@@ -75,6 +75,7 @@ void MSA_Main_KeyCallback(uint8 keys, uint8 state);
 int main(void)
 {
   /* Initialize hardware */
+  
   HAL_BOARD_INIT();
 
   // Initialize board I/O
