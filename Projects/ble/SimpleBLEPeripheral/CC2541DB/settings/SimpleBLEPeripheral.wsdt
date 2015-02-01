@@ -12,7 +12,7 @@
           
           
           
-        <Column0>233</Column0><Column1>27</Column1><Column2>27</Column2><Column3>27</Column3></ColumnWidths>
+        <Column0>348</Column0><Column1>27</Column1><Column2>27</Column2><Column3>27</Column3></ColumnWidths>
       </Workspace>
       <Build>
         
@@ -70,7 +70,11 @@
       
       
       
+<<<<<<< HEAD
     <Top><Row0><Sizes><Toolbar-029ffc30><key>iaridepm.enu1</key></Toolbar-029ffc30></Sizes></Row0></Top><Left><Row0><Sizes><Wnd2><Rect><Top>-2</Top><Left>-2</Left><Bottom>470</Bottom><Right>324</Right><x>-2</x><y>-2</y><xscreen>190</xscreen><yscreen>172</yscreen><sizeHorzCX>139092</sizeHorzCX><sizeHorzCY>251095</sizeHorzCY><sizeVertCX>238653</sizeVertCX><sizeVertCY>689051</sizeVertCY></Rect></Wnd2></Sizes></Row0></Left><Right><Row0><Sizes/></Row0></Right><Bottom><Row0><Sizes><Wnd3><Rect><Top>-2</Top><Left>-2</Left><Bottom>170</Bottom><Right>1368</Right><x>-2</x><y>-2</y><xscreen>1370</xscreen><yscreen>172</yscreen><sizeHorzCX>1002928</sizeHorzCX><sizeHorzCY>251095</sizeHorzCY><sizeVertCX>139092</sizeVertCX><sizeVertCY>251095</sizeVertCY></Rect></Wnd3></Sizes></Row0></Bottom><Float><Sizes/></Float></Positions>
+=======
+    <Top><Row0><Sizes><Toolbar-030a93d8><key>iaridepm.enu1</key></Toolbar-030a93d8></Sizes></Row0></Top><Left><Row0><Sizes><Wnd2><Rect><Top>-2</Top><Left>-2</Left><Bottom>431</Bottom><Right>439</Right><x>-2</x><y>-2</y><xscreen>257</xscreen><yscreen>252</yscreen><sizeHorzCX>188141</sizeHorzCX><sizeHorzCY>347107</sizeHorzCY><sizeVertCX>322840</sizeVertCX><sizeVertCY>596419</sizeVertCY></Rect></Wnd2></Sizes></Row0></Left><Right><Row0><Sizes/></Row0></Right><Bottom><Row0><Sizes><Wnd3><Rect><Top>-2</Top><Left>-2</Left><Bottom>250</Bottom><Right>1368</Right><x>-2</x><y>-2</y><xscreen>1370</xscreen><yscreen>252</yscreen><sizeHorzCX>1002928</sizeHorzCX><sizeHorzCY>347107</sizeHorzCY><sizeVertCX>188141</sizeVertCX><sizeVertCY>347107</sizeVertCY></Rect></Wnd3></Sizes></Row0></Bottom><Float><Sizes/></Float></Positions>
+>>>>>>> origin/wzc-edit
   </Desktop>
 </Workspace>
 
