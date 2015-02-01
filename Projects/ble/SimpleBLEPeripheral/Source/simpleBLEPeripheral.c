@@ -20,7 +20,6 @@
   the foregoing purpose, you may not use, reproduce, copy, prepare derivative
   works of, modify, distribute, perform, display or sell this Software and/or
   its documentation for any purpose.
-//
   YOU FURTHER ACKNOWLEDGE AND AGREE THAT THE SOFTWARE AND DOCUMENTATION ARE
   PROVIDED “AS IS?WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED,
   INCLUDING WITHOUT LIMITATION, ANY WARRANTY OF MERCHANTABILITY, TITLE,
@@ -152,6 +151,7 @@
 uint8 simpleBLEPeripheral_TaskID;   // Task ID for internal task/event processing
 static uint8 flag=0;
 static uint8 j=0;
+static uint8 flag1=0;
 static uint8 taskb[8]={0x40,0x60,0x20,0x30,0x10,0x90,0x80,0xc0};
 
 gaprole_States_t gapProfileState = GAPROLE_INIT;
@@ -620,7 +620,7 @@ uint16 SimpleBLEPeripheral_ProcessEvent( uint8 task_id, uint16 events )
     
       if(flag!=0)
       {
-        if(flag==1)
+        if(flag==1&&flag1==0)
         {
           P1=taskb[i];
           i++;
@@ -630,12 +630,13 @@ uint16 SimpleBLEPeripheral_ProcessEvent( uint8 task_id, uint16 events )
           if(j==16*8)
           {
             flag=0;
+            flag1=1;
             j=0;
             P1=0x00;
           }
           
         }
-        if(flag==2)
+        if(flag==2&&flag1==1)
         {
           P1=taskb[7-i];
           i++;
@@ -644,6 +645,7 @@ uint16 SimpleBLEPeripheral_ProcessEvent( uint8 task_id, uint16 events )
           j++;
           if(j==16*8)
           {
+            flag1=0;
             flag=0;
             j=0;
             P1=0x00;
