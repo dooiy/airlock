@@ -607,7 +607,7 @@ uint16 SimpleBLEPeripheral_ProcessEvent( uint8 task_id, uint16 events )
 
     // Set timer for first periodic event
     if ( SBP_PERIODIC_EVT_PERIOD ){
-    osal_start_reload_timer( simpleBLEPeripheral_TaskID, SBP_PERIODIC_EVT, SBP_PERIODIC_EVT_PERIOD );
+  //  osal_start_reload_timer( simpleBLEPeripheral_TaskID, SBP_PERIODIC_EVT, SBP_PERIODIC_EVT_PERIOD );
     }
     CheckKeyForSetAllParaDefault(); //按键按下3秒， 回复出厂设置
     
@@ -998,6 +998,7 @@ static void ProcessPairStateCB( uint16 connHandle, uint8 state, uint8 status )
     {
       HalLcdWriteString( "Pairing success", HAL_LCD_LINE_1 );/*密码正确*/
 	  gPairStatus = BOND_PAIR_STATUS_PAIRED;
+          osal_start_reload_timer( simpleBLEPeripheral_TaskID, SBP_PERIODIC_EVT, SBP_PERIODIC_EVT_PERIOD );
     }
     else
     {
