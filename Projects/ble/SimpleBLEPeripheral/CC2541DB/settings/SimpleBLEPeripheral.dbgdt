@@ -26,7 +26,7 @@
         
         
       <MixedMode>1</MixedMode><CodeCovShow>1</CodeCovShow><InstrProfShow>1</InstrProfShow></Disassembly>
-    <Watch><Format><struct_types/><watch_formats/></Format><Column0>100</Column0><Column1>100</Column1><Column2>100</Column2><Column3>100</Column3></Watch></Static>
+    </Static>
     <Windows>
       
       
@@ -47,7 +47,7 @@
           </Tab>
         </Tabs>
         
-      <SelectedTab>0</SelectedTab></Wnd0><Wnd3>
+      <SelectedTab>0</SelectedTab></Wnd0><Wnd1>
         <Tabs>
           <Tab>
             <Identity>TabID-13054-3243</Identity>
@@ -59,7 +59,7 @@
           </Tab>
         </Tabs>
         
-      <SelectedTab>0</SelectedTab></Wnd3><Wnd4>
+      <SelectedTab>0</SelectedTab></Wnd1><Wnd2>
         <Tabs>
           <Tab>
             <Identity>TabID-23803-3246</Identity>
@@ -69,20 +69,20 @@
           </Tab>
         </Tabs>
         
-      <SelectedTab>0</SelectedTab></Wnd4><Wnd5><Tabs><Tab><Identity>TabID-24470-6095</Identity><TabName>Watch</TabName><Factory>Watch</Factory><Session><Expressions/><TabId>0</TabId><Column0>100</Column0><Column1>100</Column1><Column2>100</Column2><Column3>100</Column3></Session></Tab></Tabs><SelectedTab>0</SelectedTab></Wnd5></Windows>
+      <SelectedTab>0</SelectedTab></Wnd2></Windows>
     <Editor>
       
       
       
       
-    <Pane><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\..\Source\simpleBLEPeripheral.c</Filename><XPos>0</XPos><YPos>995</YPos><SelStart>31984</SelStart><SelEnd>31984</SelEnd></Tab><ActiveTab>0</ActiveTab><Tab><Factory>TextEditor</Factory><Filename>F:\&#x79D1;&#x534F;&#x6587;&#x6863;\cc2541\BLE&#x9AD8;&#x7eA7;&#x5B9e;&#x8DF5;09 SmartRF&#x5F00;&#x53D1;&#x677F; &#x4e3B;&#x4eCe;&#x4e00;&#x4F53;&#x4e32;&#x53e3;&#x900F;&#x4F20;\BLE-132-amomcu-uart2uart\Projects\ble\SimpleBLEPeripheral\Source\SimpleBLEPeripheral_Main.c</Filename><XPos>0</XPos><YPos>31</YPos><SelStart>4026</SelStart><SelEnd>4026</SelEnd></Tab><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\..\Source\simpleBLE.c</Filename><XPos>0</XPos><YPos>136</YPos><SelStart>2840</SelStart><SelEnd>2840</SelEnd></Tab><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\..\Source\SimpleBLEPeripheral_Main.c</Filename><XPos>0</XPos><YPos>68</YPos><SelStart>3637</SelStart><SelEnd>3637</SelEnd></Tab><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\..\..\..\..\Components\ble\hci\hci_data.h</Filename><XPos>0</XPos><YPos>64</YPos><SelStart>3124</SelStart><SelEnd>3124</SelEnd></Tab><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\..\..\Profiles\Roles\peripheral.h</Filename><XPos>0</XPos><YPos>255</YPos><SelStart>7348</SelStart><SelEnd>7365</SelEnd></Tab></Pane><ActivePane>0</ActivePane><Sizes><Pane><X>1000000</X><Y>1000000</Y></Pane></Sizes><SplitMode>1</SplitMode></Editor>
+    <Pane><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\..\Source\simpleBLEPeripheral.c</Filename><XPos>0</XPos><YPos>69</YPos><SelStart>21662</SelStart><SelEnd>21662</SelEnd></Tab><Tab><Factory>TextEditor</Factory><Filename>F:\&#x79D1;&#x534F;&#x6587;&#x6863;\cc2541\BLE&#x9AD8;&#x7eA7;&#x5B9e;&#x8DF5;09 SmartRF&#x5F00;&#x53D1;&#x677F; &#x4e3B;&#x4eCe;&#x4e00;&#x4F53;&#x4e32;&#x53e3;&#x900F;&#x4F20;\BLE-132-amomcu-uart2uart\Projects\ble\SimpleBLEPeripheral\Source\SimpleBLEPeripheral_Main.c</Filename><XPos>0</XPos><YPos>67</YPos><SelStart>3634</SelStart><SelEnd>3634</SelEnd></Tab><ActiveTab>1</ActiveTab></Pane><ActivePane>0</ActivePane><Sizes><Pane><X>1000000</X><Y>1000000</Y></Pane></Sizes><SplitMode>1</SplitMode></Editor>
     <Positions>
       
       
       
       
       
-    <Top><Row0><Sizes><Toolbar-00adfc30><key>iaridepm.enu1</key></Toolbar-00adfc30></Sizes></Row0><Row1><Sizes><Toolbar-00b722d8><key>debuggergui.enu1</key></Toolbar-00b722d8></Sizes></Row1><Row2><Sizes/></Row2></Top><Left><Row0><Sizes><Wnd3><Rect><Top>-2</Top><Left>-2</Left><Bottom>446</Bottom><Right>188</Right><x>-2</x><y>-2</y><xscreen>190</xscreen><yscreen>172</yscreen><sizeHorzCX>139092</sizeHorzCX><sizeHorzCY>251095</sizeHorzCY><sizeVertCX>139092</sizeVertCX><sizeVertCY>654015</sizeVertCY></Rect></Wnd3></Sizes></Row0></Left><Right><Row0><Sizes><Wnd4><Rect><Top>-2</Top><Left>-2</Left><Bottom>446</Bottom><Right>188</Right><x>-2</x><y>-2</y><xscreen>190</xscreen><yscreen>172</yscreen><sizeHorzCX>139092</sizeHorzCX><sizeHorzCY>251095</sizeHorzCY><sizeVertCX>139092</sizeVertCX><sizeVertCY>654015</sizeVertCY></Rect></Wnd4></Sizes></Row0><Row1><Sizes><Wnd5><Rect><Top>-2</Top><Left>186</Left><Bottom>446</Bottom><Right>386</Right><x>186</x><y>-2</y><xscreen>200</xscreen><yscreen>200</yscreen><sizeHorzCX>146413</sizeHorzCX><sizeHorzCY>291971</sizeHorzCY><sizeVertCX>146413</sizeVertCX><sizeVertCY>654015</sizeVertCY></Rect></Wnd5></Sizes></Row1></Right><Bottom><Row0><Sizes><Wnd0><Rect><Top>-2</Top><Left>-2</Left><Bottom>170</Bottom><Right>1368</Right><x>-2</x><y>-2</y><xscreen>1370</xscreen><yscreen>172</yscreen><sizeHorzCX>1002928</sizeHorzCX><sizeHorzCY>251095</sizeHorzCY><sizeVertCX>139092</sizeVertCX><sizeVertCY>251095</sizeVertCY></Rect></Wnd0></Sizes></Row0></Bottom><Float><Sizes/></Float></Positions>
+    <Top><Row0><Sizes><Toolbar-034cfc30><key>iaridepm.enu1</key></Toolbar-034cfc30></Sizes></Row0><Row1><Sizes><Toolbar-08958958><key>debuggergui.enu1</key></Toolbar-08958958></Sizes></Row1></Top><Left><Row0><Sizes><Wnd1><Rect><Top>-2</Top><Left>-2</Left><Bottom>446</Bottom><Right>188</Right><x>-2</x><y>-2</y><xscreen>190</xscreen><yscreen>172</yscreen><sizeHorzCX>139092</sizeHorzCX><sizeHorzCY>251095</sizeHorzCY><sizeVertCX>139092</sizeVertCX><sizeVertCY>654015</sizeVertCY></Rect></Wnd1></Sizes></Row0></Left><Right><Row0><Sizes><Wnd2><Rect><Top>-2</Top><Left>-2</Left><Bottom>446</Bottom><Right>188</Right><x>-2</x><y>-2</y><xscreen>190</xscreen><yscreen>172</yscreen><sizeHorzCX>139092</sizeHorzCX><sizeHorzCY>251095</sizeHorzCY><sizeVertCX>139092</sizeVertCX><sizeVertCY>654015</sizeVertCY></Rect></Wnd2></Sizes></Row0></Right><Bottom><Row0><Sizes><Wnd0><Rect><Top>-2</Top><Left>-2</Left><Bottom>170</Bottom><Right>1368</Right><x>-2</x><y>-2</y><xscreen>1370</xscreen><yscreen>172</yscreen><sizeHorzCX>1002928</sizeHorzCX><sizeHorzCY>251095</sizeHorzCY><sizeVertCX>139092</sizeVertCX><sizeVertCY>251095</sizeVertCY></Rect></Wnd0></Sizes></Row0></Bottom><Float><Sizes/></Float></Positions>
   </Desktop>
 </Project>
 
