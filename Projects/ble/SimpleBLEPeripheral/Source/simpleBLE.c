@@ -129,8 +129,8 @@ void simpleBLE_SetAllParaDefault(PARA_SET_FACTORY flag)
         sys_config.role = BLE_ROLE_PERIPHERAL;         //主从模式, 默认从机
         //sys_config.role = BLE_ROLE_CENTRAL;
 
-        sprintf((char*)sys_config.pass, "000000");      //密码
-        sys_config.type = 0;                     //鉴权模式
+        sprintf((char*)sys_config.pass, "123457");      //密码
+        sys_config.type = 1;                     //鉴权模式
         //sys_config.mac_addr[16];               //本机mac地址
         sys_config.connl_status = 0;             //连接最后一次的状态
         sys_config.connect_mac_status = 0;       //连接指定地址的返回状态

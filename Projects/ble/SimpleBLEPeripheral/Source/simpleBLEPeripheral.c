@@ -957,7 +957,7 @@ static void ProcessPasscodeCB(uint8 *deviceAddr,uint16 connectionHandle,uint8 ui
   passcode %= 1000000;  
 #else
   passcode = str2Num(sys_config.pass, 6);
-  passcode %= 1000000;
+
 #endif
   //在lcd上显示当前的密码，这样手机端，根据此密码连接。
   // Display passcode to user
