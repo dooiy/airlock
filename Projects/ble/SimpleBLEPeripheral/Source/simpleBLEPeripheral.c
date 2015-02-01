@@ -20,7 +20,6 @@
   the foregoing purpose, you may not use, reproduce, copy, prepare derivative
   works of, modify, distribute, perform, display or sell this Software and/or
   its documentation for any purpose.
-
   YOU FURTHER ACKNOWLEDGE AND AGREE THAT THE SOFTWARE AND DOCUMENTATION ARE
   PROVIDED 揂S IS?WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED,
   INCLUDING WITHOUT LIMITATION, ANY WARRANTY OF MERCHANTABILITY, TITLE,
@@ -79,6 +78,9 @@
   #include "oad_target.h"
 #endif
 
+#include "simpleble.h"
+#include "npi.h"
+
 /*********************************************************************
  * MACROS
  */
@@ -87,8 +89,6 @@
  * CONSTANTS
  */
 
-// How often to perform periodic event
-#define SBP_PERIODIC_EVT_PERIOD                   5000
 
 // What is the advertising interval when device is discoverable (units of 625us, 160=100ms)
 #define DEFAULT_ADVERTISING_INTERVAL          160
@@ -103,30 +103,27 @@
 #endif  // defined ( CC2540_MINIDK )
 
 // Minimum connection interval (units of 1.25ms, 80=100ms) if automatic parameter update request is enabled
-#define DEFAULT_DESIRED_MIN_CONN_INTERVAL     80
+#define DEFAULT_DESIRED_MIN_CONN_INTERVAL     8//80   连接间隔与数据发送量有关， 连接间隔越短， 单位时间内就能发送越多的数据
 
 // Maximum connection interval (units of 1.25ms, 800=1000ms) if automatic parameter update request is enabled
-#define DEFAULT_DESIRED_MAX_CONN_INTERVAL     800
+#define DEFAULT_DESIRED_MAX_CONN_INTERVAL     8//800   连接间隔与数据发送量有关， 连接间隔越短， 单位时间内就能发送越多的数据
 
 // Slave latency to use if automatic parameter update request is enabled
 #define DEFAULT_DESIRED_SLAVE_LATENCY         0
 
 // Supervision timeout value (units of 10ms, 1000=10s) if automatic parameter update request is enabled
-#define DEFAULT_DESIRED_CONN_TIMEOUT          1000
+#define DEFAULT_DESIRED_CONN_TIMEOUT          100//1000  -各种原因断开连接后，超时并重新广播的时间:  100 = 1s
 
 // Whether to enable automatic parameter update request when a connection is formed
 #define DEFAULT_ENABLE_UPDATE_REQUEST         TRUE
 
 // Connection Pause Peripheral time value (in seconds)
-#define DEFAULT_CONN_PAUSE_PERIPHERAL         6
+#define DEFAULT_CONN_PAUSE_PERIPHERAL         3
 
 // Company Identifier: Texas Instruments Inc. (13)
 #define TI_COMPANY_ID                         0x000D
 
 #define INVALID_CONNHANDLE                    0xFFFF
-
-// Length of bd addr as a string
-#define B_ADDR_STR_LEN                        15
 
 #if defined ( PLUS_BROADCASTER )
   #define ADV_IN_CONN_WAIT                    500 // delay 500 ms
@@ -151,10 +148,16 @@
 /*********************************************************************
  * LOCAL VARIABLES
  */
-static uint8 simpleBLEPeripheral_TaskID;   // Task ID for internal task/event processing
+uint8 simpleBLEPeripheral_TaskID;   // Task ID for internal task/event processing
+static uint8 flag=0;
+static uint8 j=0;
+static uint8 flag1=0;
+static uint8 taskb[8]={0x40,0x60,0x20,0x30,0x10,0x90,0x80,0xc0};
 
-static gaprole_States_t gapProfileState = GAPROLE_INIT;
+gaprole_States_t gapProfileState = GAPROLE_INIT;
 
+bool simpleBLEChar6DoWrite2 = TRUE;
+/*
 // GAP - SCAN RSP data (max size = 31 bytes)
 static uint8 scanRspData[] =
 {
@@ -194,6 +197,7 @@ static uint8 scanRspData[] =
   GAP_ADTYPE_POWER_LEVEL,
   0       // 0dBm
 };
+*/
 
 // GAP - Advertisement data (max size = 31 bytes, though this is
 // best kept short to conserve power while advertisting)
@@ -215,36 +219,67 @@ static uint8 advertData[] =
 
 };
 
+// GAP - Advertisement data (max size = 31 bytes, though this is
+// best kept short to conserve power while advertisting)
+static uint8 advertData_iBeacon[] =
+{
+  // Flags; this sets the device to use limited discoverable
+  // mode (advertises for 30 seconds at a time) instead of general
+  // discoverable mode (advertises indefinitely)
+  0x02,   // length of this data
+  GAP_ADTYPE_FLAGS,
+  DEFAULT_DISCOVERABLE_MODE | GAP_ADTYPE_FLAGS_BREDR_NOT_SUPPORTED,
+
+  // in this peripheral
+  0x1A,   // length of this data 26byte
+  GAP_ADTYPE_MANUFACTURER_SPECIFIC,  
+  /*Apple Pre-Amble*/
+  0x4C,
+  0x00,
+  0x02,
+  0x15,
+  /*Device UUID (16 Bytes)*/
+  0xE2, 0xC5, 0x6D, 0xB5, 0xDF, 0xFB, 0x48,0xD2, 0xB0, 0x60, 0xD0, 0xF5, 0xA7, 0x10, 0x96, 0xE0,
+  /*Major Value (2 Bytes)*/
+  0x00, 0x01,
+  
+  /*Minor Value (2 Bytes)*/
+  0x00,0x02,
+  
+  /*Measured Power*/
+  0xCD
+};
+//static int8 gMP = 0xCD;
 // GAP GATT Attributes
-static uint8 attDeviceName[GAP_DEVICE_NAME_LEN] = "Simple BLE Peripheral";
+
+// GAP GATT Attributes
+//static uint8 attDeviceName[GAP_DEVICE_NAME_LEN] = "Simple BLE Peripheral";
 
 /*********************************************************************
  * LOCAL FUNCTIONS
  */
 static void simpleBLEPeripheral_ProcessOSALMsg( osal_event_hdr_t *pMsg );
 static void peripheralStateNotificationCB( gaprole_States_t newState );
-static void performPeriodicTask( void );
+static void peripheralRssiReadCB( int8 rssi );
 static void simpleProfileChangeCB( uint8 paramID );
 
-// Application states
-enum
+//#if defined( BLE_BOND_PAIR )
+typedef enum
 {
-  BLE_STATE_IDLE,
-  BLE_STATE_CONNECTED,
-};
-// Application state
-static uint8 simpleBLEState = BLE_STATE_IDLE;
-static uint8 gPairStatus=0;/*用来管理当前的状态，如果密码不正确，立即取消连接，0表示未配对，1表示已配对*/
+  BOND_PAIR_STATUS_PAIRING,  //未配对
+  BOND_PAIR_STATUS_PAIRED,  //已配对
+}BOND_PAIR_STATUS;
+// 用来管理当前的状态，如果密码不正确，立即取消连接，并重启
+static BOND_PAIR_STATUS gPairStatus = BOND_PAIR_STATUS_PAIRING;
+
 void ProcessPasscodeCB(uint8 *deviceAddr,uint16 connectionHandle,uint8 uiInputs,uint8 uiOutputs );
 static void ProcessPairStateCB( uint16 connHandle, uint8 state, uint8 status );
+//#endif
 
 #if defined( CC2540_MINIDK )
 static void simpleBLEPeripheral_HandleKeys( uint8 shift, uint8 keys );
 #endif
 
-#if (defined HAL_LCD) && (HAL_LCD == TRUE)
-static char *bdAddr2Str ( uint8 *pAddr );
-#endif // (defined HAL_LCD) && (HAL_LCD == TRUE)
 
 
 
@@ -256,15 +291,19 @@ static char *bdAddr2Str ( uint8 *pAddr );
 static gapRolesCBs_t simpleBLEPeripheral_PeripheralCBs =
 {
   peripheralStateNotificationCB,  // Profile State Change Callbacks
-  NULL                            // When a valid RSSI is read from controller (not used by application)
+  peripheralRssiReadCB,               // When a valid RSSI is read from controller (not used by application)
 };
-
 
 // GAP Bond Manager Callbacks
 static gapBondCBs_t simpleBLEPeripheral_BondMgrCBs =
 {
+//#if defined( BLE_BOND_PAIR )
   ProcessPasscodeCB,                     // 密码回调
   ProcessPairStateCB                     // 绑定状态回调
+//#else
+//  NULL,                     // Passcode callback (not used by application)
+//  NULL                      // Pairing / Bonding state Callback (not used by application)
+//#endif
 };
 
 // Simple GATT Profile Callbacks
@@ -322,9 +361,54 @@ void SimpleBLEPeripheral_Init( uint8 task_id )
     // Set the GAP Role Parameters
     GAPRole_SetParameter( GAPROLE_ADVERT_ENABLED, sizeof( uint8 ), &initial_advertising_enable );
     GAPRole_SetParameter( GAPROLE_ADVERT_OFF_TIME, sizeof( uint16 ), &gapRole_AdvertOffTime );
-
+#if 0
     GAPRole_SetParameter( GAPROLE_SCAN_RSP_DATA, sizeof ( scanRspData ), scanRspData );
-    GAPRole_SetParameter( GAPROLE_ADVERT_DATA, sizeof( advertData ), advertData );
+#else
+    {       
+        uint8 AttDeviceNameLen = osal_strlen((char*)GetAttDeviceName());
+        uint8 pSscanRspDataLen = ( 11 + AttDeviceNameLen);
+        uint8 *pSscanRspData = osal_mem_alloc(pSscanRspDataLen);
+        if(pSscanRspData)
+        {
+            uint8 index = 0;
+            
+            pSscanRspData[0] = AttDeviceNameLen + 1;
+            pSscanRspData[1] = GAP_ADTYPE_LOCAL_NAME_COMPLETE;
+            osal_memcpy(&pSscanRspData[2], GetAttDeviceName(), AttDeviceNameLen);
+
+            index = 2 + AttDeviceNameLen;
+            
+            pSscanRspData[index+0] = 0x05;
+            pSscanRspData[index+1] = GAP_ADTYPE_SLAVE_CONN_INTERVAL_RANGE;
+            pSscanRspData[index+2] = LO_UINT16( DEFAULT_DESIRED_MIN_CONN_INTERVAL );   // 100ms
+            pSscanRspData[index+3] = HI_UINT16( DEFAULT_DESIRED_MIN_CONN_INTERVAL );
+            pSscanRspData[index+4] = LO_UINT16( DEFAULT_DESIRED_MAX_CONN_INTERVAL );   // 1s
+            pSscanRspData[index+5] = HI_UINT16( DEFAULT_DESIRED_MAX_CONN_INTERVAL );
+
+            // Tx power level
+            pSscanRspData[index+6] = 0x02;   // length of this data
+            pSscanRspData[index+7] = GAP_ADTYPE_POWER_LEVEL;
+            pSscanRspData[index+8] = 0;       // 0dBm    
+
+            GAPRole_SetParameter( GAPROLE_SCAN_RSP_DATA, pSscanRspDataLen, pSscanRspData );
+
+            osal_mem_free(pSscanRspData);
+        }
+        else
+        {
+            HalLcdWriteString( "ERR:pSscanRspData", HAL_LCD_LINE_1 );
+        }
+    }
+#endif
+
+    if(CheckIfUse_iBeacon())
+    {
+        GAPRole_SetParameter( GAPROLE_ADVERT_DATA, sizeof( advertData_iBeacon ), advertData_iBeacon );
+    }
+    else
+    {
+        GAPRole_SetParameter( GAPROLE_ADVERT_DATA, sizeof( advertData ), advertData );
+    }
 
     GAPRole_SetParameter( GAPROLE_PARAM_UPDATE_ENABLE, sizeof( uint8 ), &enable_update_request );
     GAPRole_SetParameter( GAPROLE_MIN_CONN_INTERVAL, sizeof( uint16 ), &desired_min_interval );
@@ -334,27 +418,47 @@ void SimpleBLEPeripheral_Init( uint8 task_id )
   }
 
   // Set the GAP Characteristics
-  GGS_SetParameter( GGS_DEVICE_NAME_ATT, GAP_DEVICE_NAME_LEN, attDeviceName );
+  //GGS_SetParameter( GGS_DEVICE_NAME_ATT, GAP_DEVICE_NAME_LEN, attDeviceName );
+  GGS_SetParameter( GGS_DEVICE_NAME_ATT, GAP_DEVICE_NAME_LEN, GetAttDeviceName() );
 
   // Set advertising interval
   {
     uint16 advInt = DEFAULT_ADVERTISING_INTERVAL;
 
+    if(CheckIfUse_iBeacon())
+    {
+        advInt = Get_iBeaconAdvertisingInterral();
+        advInt = (advInt*1000 / 625);
+    }
+    
     GAP_SetParamValue( TGAP_LIM_DISC_ADV_INT_MIN, advInt );
     GAP_SetParamValue( TGAP_LIM_DISC_ADV_INT_MAX, advInt );
     GAP_SetParamValue( TGAP_GEN_DISC_ADV_INT_MIN, advInt );
     GAP_SetParamValue( TGAP_GEN_DISC_ADV_INT_MAX, advInt );
-	
   }
 
   //下面是与配对相关的设置  
   // Setup the GAP Bond Manager
   {
     uint32 passkey = 0; // passkey "000000"
-    uint8 pairMode = GAPBOND_PAIRING_MODE_INITIATE;
+    uint8 pairMode = GAPBOND_PAIRING_MODE_WAIT_FOR_REQ;
     uint8 mitm = TRUE;
     uint8 ioCap = GAPBOND_IO_CAP_DISPLAY_ONLY;  //显示密码， 以便主机输入配对的密码
     uint8 bonding = TRUE;
+
+//#if defined( BLE_BOND_PAIR )
+    if(simpleBle_GetIfNeedPassword())
+    {
+        pairMode = GAPBOND_PAIRING_MODE_INITIATE;   //配对模式，置配成等待主机的配对请求
+        bonding = TRUE;
+    }
+    else
+    {
+        pairMode = GAPBOND_PAIRING_MODE_WAIT_FOR_REQ;
+        bonding = TRUE;            
+    }    
+//#endif
+
     GAPBondMgr_SetParameter( GAPBOND_DEFAULT_PASSCODE, sizeof ( uint32 ), &passkey );
     GAPBondMgr_SetParameter( GAPBOND_PAIRING_MODE, sizeof ( uint8 ), &pairMode );
     GAPBondMgr_SetParameter( GAPBOND_MITM_PROTECTION, sizeof ( uint8 ), &mitm );
@@ -378,11 +482,15 @@ void SimpleBLEPeripheral_Init( uint8 task_id )
     uint8 charValue3 = 3;
     uint8 charValue4 = 4;
     uint8 charValue5[SIMPLEPROFILE_CHAR5_LEN] = { 1, 2, 3, 4, 5 };
+    uint8 charValue6[SIMPLEPROFILE_CHAR6_LEN] = { 1, 2, 3, 4, 5 };
+    uint8 charValue7[SIMPLEPROFILE_CHAR7_LEN] = { 1, 2, 3, 4, 5 };
     SimpleProfile_SetParameter( SIMPLEPROFILE_CHAR1, sizeof ( uint8 ), &charValue1 );
     SimpleProfile_SetParameter( SIMPLEPROFILE_CHAR2, sizeof ( uint8 ), &charValue2 );
     SimpleProfile_SetParameter( SIMPLEPROFILE_CHAR3, sizeof ( uint8 ), &charValue3 );
     SimpleProfile_SetParameter( SIMPLEPROFILE_CHAR4, sizeof ( uint8 ), &charValue4 );
     SimpleProfile_SetParameter( SIMPLEPROFILE_CHAR5, SIMPLEPROFILE_CHAR5_LEN, charValue5 );
+    SimpleProfile_SetParameter( SIMPLEPROFILE_CHAR6, SIMPLEPROFILE_CHAR6_LEN, charValue6 );
+    SimpleProfile_SetParameter( SIMPLEPROFILE_CHAR7, SIMPLEPROFILE_CHAR7_LEN, charValue7 );
   }
 
 
@@ -435,7 +543,10 @@ void SimpleBLEPeripheral_Init( uint8 task_id )
   // Enable clock divide on halt
   // This reduces active current while radio is active and CC254x MCU
   // is halted
-  HCI_EXT_ClkDivOnHaltCmd( HCI_EXT_ENABLE_CLK_DIVIDE_ON_HALT );
+  // 需要关闭的CLK自动分频，在初始化中加入HCI_EXT_ClkDivOnHaltCmd( HCI_EXT_DISABLE_CLK_DIVIDE_ON_HALT )?  // 如果开启，会导致频率自动切换，DMA工作受到影响，小范围丢数。  
+  // 这里把他关闭， 如果想降低功耗， 这个应该要开启的， 这里矛盾了  
+  HCI_EXT_ClkDivOnHaltCmd( HCI_EXT_DISABLE_CLK_DIVIDE_ON_HALT );
+  //HCI_EXT_ClkDivOnHaltCmd( HCI_EXT_ENABLE_CLK_DIVIDE_ON_HALT );
 
 #if defined ( DC_DC_P0_7 )
 
@@ -444,6 +555,9 @@ void SimpleBLEPeripheral_Init( uint8 task_id )
 
 #endif // defined ( DC_DC_P0_7 )
 
+  // 信号发射强度
+  HCI_EXT_SetTxPowerCmd(sys_config.txPower);
+ 
   // Setup a delayed profile startup
   osal_set_event( simpleBLEPeripheral_TaskID, SBP_START_DEVICE_EVT );
 
@@ -466,14 +580,14 @@ uint16 SimpleBLEPeripheral_ProcessEvent( uint8 task_id, uint16 events )
 {
 
   VOID task_id; // OSAL required parameter that isn't used in this function
-
+  static uint8 i=0;
   if ( events & SYS_EVENT_MSG )
   {
     uint8 *pMsg;
 
     if ( (pMsg = osal_msg_receive( simpleBLEPeripheral_TaskID )) != NULL )
     {
-      simpleBLEPeripheral_ProcessOSALMsg( (osal_event_hdr_t *)pMsg );
+     simpleBLEPeripheral_ProcessOSALMsg( (osal_event_hdr_t *)pMsg );
 
       // Release the OSAL message
       VOID osal_msg_deallocate( pMsg );
@@ -484,7 +598,7 @@ uint16 SimpleBLEPeripheral_ProcessEvent( uint8 task_id, uint16 events )
   }
 
   if ( events & SBP_START_DEVICE_EVT )
-  {
+  {    
     // Start the Device
     VOID GAPRole_StartDevice( &simpleBLEPeripheral_PeripheralCBs );
 
@@ -492,18 +606,56 @@ uint16 SimpleBLEPeripheral_ProcessEvent( uint8 task_id, uint16 events )
     VOID GAPBondMgr_Register( &simpleBLEPeripheral_BondMgrCBs );
 
     // Set timer for first periodic event
-    osal_start_timerEx( simpleBLEPeripheral_TaskID, SBP_PERIODIC_EVT, SBP_PERIODIC_EVT_PERIOD );
-
+    if ( SBP_PERIODIC_EVT_PERIOD ){
+    osal_start_reload_timer( simpleBLEPeripheral_TaskID, SBP_PERIODIC_EVT, SBP_PERIODIC_EVT_PERIOD );
+    }
+    CheckKeyForSetAllParaDefault(); //按键按下3秒， 回复出厂设置
+    
     return ( events ^ SBP_START_DEVICE_EVT );
   }
 
   if ( events & SBP_PERIODIC_EVT )
   {
     // Restart timer
-    if ( SBP_PERIODIC_EVT_PERIOD )
-    {
-      osal_start_timerEx( simpleBLEPeripheral_TaskID, SBP_PERIODIC_EVT, SBP_PERIODIC_EVT_PERIOD );
-    }
+    
+      if(flag!=0)
+      {
+        if(flag==1&&flag1==0)
+        {
+          P1=taskb[i];
+          i++;
+          if(i>=7)
+          i=0;
+          j++;
+          if(j==16*8)
+          {
+            flag=0;
+            flag1=1;
+            j=0;
+            P1=0x00;
+          }
+          
+        }
+        if(flag==2&&flag1==1)
+        {
+          P1=taskb[7-i];
+          i++;
+          if(i>=7)
+            i=0;
+          j++;
+          if(j==16*8)
+          {
+            flag1=0;
+            flag=0;
+            j=0;
+            P1=0x00;
+          }
+          
+        }
+          
+      }
+       
+    
 
     // Perform periodic application task
     performPeriodicTask();
@@ -573,12 +725,14 @@ static void simpleBLEPeripheral_HandleKeys( uint8 shift, uint8 keys )
   if ( keys & HAL_KEY_SW_1 )
   {
     SK_Keys |= SK_KEY_LEFT;
+    NPI_WriteTransport("KEY K1\n",7);
   }
 
   if ( keys & HAL_KEY_SW_2 )
   {
 
     SK_Keys |= SK_KEY_RIGHT;
+    NPI_WriteTransport("KEY K2\n",7);
 
     // if device is not in a connection, pressing the right key should toggle
     // advertising on and off
@@ -652,6 +806,11 @@ static void peripheralStateNotificationCB( gaprole_States_t newState )
           HalLcdWriteString( bdAddr2Str( ownAddress ),  HAL_LCD_LINE_2 );
           HalLcdWriteString( "Initialized",  HAL_LCD_LINE_3 );
         #endif // (defined HAL_LCD) && (HAL_LCD == TRUE)
+
+        //mac 地址   bdAddr2Str( pEvent->initDone.devAddr ) 的输出格式是， 例如     0xD03972A5F3 
+        osal_memcpy(sys_config.mac_addr, bdAddr2Str( ownAddress )+2, 12);
+        sys_config.mac_addr[12] = 0;
+        //PrintAllPara();
       }
       break;
 
@@ -660,7 +819,6 @@ static void peripheralStateNotificationCB( gaprole_States_t newState )
         #if (defined HAL_LCD) && (HAL_LCD == TRUE)
           HalLcdWriteString( "Advertising",  HAL_LCD_LINE_3 );
         #endif // (defined HAL_LCD) && (HAL_LCD == TRUE)
-        simpleBLEState = BLE_STATE_IDLE;
       }
       break;
 
@@ -669,7 +827,8 @@ static void peripheralStateNotificationCB( gaprole_States_t newState )
         #if (defined HAL_LCD) && (HAL_LCD == TRUE)
           HalLcdWriteString( "Connected",  HAL_LCD_LINE_3 );
         #endif // (defined HAL_LCD) && (HAL_LCD == TRUE)
-        simpleBLEState = BLE_STATE_CONNECTED;
+        LedSetState(HAL_LED_MODE_OFF);
+        NPI_WriteTransport("Connected\r\n", 11);
       }
       break;
 
@@ -714,42 +873,16 @@ static void peripheralStateNotificationCB( gaprole_States_t newState )
                             // "CC2540 Slave" configurations
 #endif
 
+    //LCD_WRITE_STRING( "?", HAL_LCD_LINE_1 );
 
 }
 
-/*********************************************************************
- * @fn      performPeriodicTask
- *
- * @brief   Perform a periodic application task. This function gets
- *          called every five seconds as a result of the SBP_PERIODIC_EVT
- *          OSAL event. In this example, the value of the third
- *          characteristic in the SimpleGATTProfile service is retrieved
- *          from the profile, and then copied into the value of the
- *          the fourth characteristic.
- *
- * @param   none
- *
- * @return  none
- */
-static void performPeriodicTask( void )
+static void peripheralRssiReadCB( int8 rssi )
 {
-  uint8 valueToCopy;
-  uint8 stat;
-
-  // Call to retrieve the value of the third characteristic in the profile
-  stat = SimpleProfile_GetParameter( SIMPLEPROFILE_CHAR3, &valueToCopy);
-
-  if( stat == SUCCESS )
-  {
-    /*
-     * Call to set that value of the fourth characteristic in the profile. Note
-     * that if notifications of the fourth characteristic have been enabled by
-     * a GATT client device, then a notification will be sent every time this
-     * function is called.
-     */
-    SimpleProfile_SetParameter( SIMPLEPROFILE_CHAR4, sizeof(uint8), &valueToCopy);
-  }
+    LCD_WRITE_STRING_VALUE( "RSSI -dB:", (uint8) (-rssi), 10, HAL_LCD_LINE_1 );
 }
+
+
 
 /*********************************************************************
  * @fn      simpleProfileChangeCB
@@ -763,11 +896,13 @@ static void performPeriodicTask( void )
 static void simpleProfileChangeCB( uint8 paramID )
 {
   uint8 newValue;
-
+  uint8 newChar6Value[SIMPLEPROFILE_CHAR6_LEN];
+  uint8 returnBytes;
+  
   switch( paramID )
   {
     case SIMPLEPROFILE_CHAR1:
-      SimpleProfile_GetParameter( SIMPLEPROFILE_CHAR1, &newValue );
+      SimpleProfile_GetParameter( SIMPLEPROFILE_CHAR1, &newValue, &returnBytes );
 
       #if (defined HAL_LCD) && (HAL_LCD == TRUE)
         HalLcdWriteStringValue( "Char 1:", (uint16)(newValue), 10,  HAL_LCD_LINE_3 );
@@ -776,54 +911,39 @@ static void simpleProfileChangeCB( uint8 paramID )
       break;
 
     case SIMPLEPROFILE_CHAR3:
-      SimpleProfile_GetParameter( SIMPLEPROFILE_CHAR3, &newValue );
+      SimpleProfile_GetParameter( SIMPLEPROFILE_CHAR3, &newValue, &returnBytes );
 
       #if (defined HAL_LCD) && (HAL_LCD == TRUE)
         HalLcdWriteStringValue( "Char 3:", (uint16)(newValue), 10,  HAL_LCD_LINE_3 );
       #endif // (defined HAL_LCD) && (HAL_LCD == TRUE)
 
       break;
+    
+    case SIMPLEPROFILE_CHAR6:
+      SimpleProfile_GetParameter( SIMPLEPROFILE_CHAR6, newChar6Value, &returnBytes );
+      if(returnBytes > 0)
+      {
+        if(newChar6Value[0]=='1')
+        {
+          flag=1;
+        }
+        
+        if(newChar6Value[0]=='2')
+        {
+          flag=2;
+        }
+        NPI_WriteTransport(newChar6Value,returnBytes);
+      }
 
+      break;
+      
     default:
       // should not reach here!
       break;
   }
 }
 
-#if (defined HAL_LCD) && (HAL_LCD == TRUE)
-/*********************************************************************
- * @fn      bdAddr2Str
- *
- * @brief   Convert Bluetooth address to string. Only needed when
- *          LCD display is used.
- *
- * @return  none
- */
-char *bdAddr2Str( uint8 *pAddr )
-{
-  uint8       i;
-  char        hex[] = "0123456789ABCDEF";
-  static char str[B_ADDR_STR_LEN];
-  char        *pStr = str;
-
-  *pStr++ = '0';
-  *pStr++ = 'x';
-
-  // Start from end of addr
-  pAddr += B_ADDR_LEN;
-
-  for ( i = B_ADDR_LEN; i > 0; i-- )
-  {
-    *pStr++ = hex[*--pAddr >> 4];
-    *pStr++ = hex[*pAddr & 0x0F];
-  }
-
-  *pStr = 0;
-
-  return str;
-}
-#endif // (defined HAL_LCD) && (HAL_LCD == TRUE)
-
+//#if defined( BLE_BOND_PAIR )
 //绑定过程中的密码管理回调函数
 static void ProcessPasscodeCB(uint8 *deviceAddr,uint16 connectionHandle,uint8 uiInputs,uint8 uiOutputs )
 {
@@ -832,9 +952,13 @@ static void ProcessPasscodeCB(uint8 *deviceAddr,uint16 connectionHandle,uint8 ui
 
   //在这里可以设置存储，保存之前设定的密码，这样就可以动态修改配对密码了。
   // Create random passcode
+#if 0
   LL_Rand( ((uint8 *) &passcode), sizeof( uint32 ));
+  passcode %= 1000000;  
+#else
+  passcode = str2Num(sys_config.pass, 6);
   passcode %= 1000000;
-
+#endif
   //在lcd上显示当前的密码，这样手机端，根据此密码连接。
   // Display passcode to user
   if ( uiOutputs != 0 )
@@ -842,41 +966,68 @@ static void ProcessPasscodeCB(uint8 *deviceAddr,uint16 connectionHandle,uint8 ui
     HalLcdWriteString( "Passcode:",  HAL_LCD_LINE_1 );
     HalLcdWriteString( (char *) _ltoa(passcode, str, 10),  HAL_LCD_LINE_2 );
   }
-  
-  // Send passcode response  发送密码请求给主机
-  GAPBondMgr_PasscodeRsp( connectionHandle, SUCCESS, passcode );
+
+  if(simpleBle_GetIfNeedPassword())
+  {
+    
+    //  串口输出密码
+    simpleBle_PrintPassword();
+    
+    // Send passcode response  发送密码请求给主机
+    GAPBondMgr_PasscodeRsp( connectionHandle, SUCCESS, passcode );
+  }
+  else
+  {
+    // 无需密码
+  }
 }
 
 //绑定过程中的状态管理，在这里可以设置标志位，当密码不正确时不允许连接。
 static void ProcessPairStateCB( uint16 connHandle, uint8 state, uint8 status )
 {
-  if ( state == GAPBOND_PAIRING_STATE_STARTED )/*主机发起连接，会进入开始绑定状态*/
+  // 主机发起连接，会进入开始绑定状态
+  if ( state == GAPBOND_PAIRING_STATE_STARTED )
   {
     HalLcdWriteString( "Pairing started", HAL_LCD_LINE_1 );
-	gPairStatus = 0;
+	gPairStatus = BOND_PAIR_STATUS_PAIRING;
   }
-  else if ( state == GAPBOND_PAIRING_STATE_COMPLETE )/*当主机提交密码后，会进入完成*/
+  // 当主机提交密码后，会进入完成
+  else if ( state == GAPBOND_PAIRING_STATE_COMPLETE )
   {
     if ( status == SUCCESS )
     {
       HalLcdWriteString( "Pairing success", HAL_LCD_LINE_1 );/*密码正确*/
-	  gPairStatus = 1;
+	  gPairStatus = BOND_PAIR_STATUS_PAIRED;
     }
     else
     {
       HalLcdWriteStringValue( "Pairing fail", status, 10, HAL_LCD_LINE_1 );/*密码不正确，或者先前已经绑定*/
-	  if(status ==8){/*已绑定*/
-		gPairStatus = 1;
-	  }else{
-		gPairStatus = 0;
+      
+	  if(status ==8)
+	  {//已绑定
+		gPairStatus = BOND_PAIR_STATUS_PAIRED;
 	  }
+      else
+      {
+		gPairStatus = BOND_PAIR_STATUS_PAIRING;
+
+        GAPRole_TerminateConnection();  // 终止连接
+        // 终止连接后， 需要复位从机
+        HAL_SYSTEM_RESET();        
+	  }
+      
+      gPairStatus = BOND_PAIR_STATUS_PAIRING;
     }
+    
 	//判断配对结果，如果不正确立刻停止连接。
-	if(simpleBLEState == BLE_STATE_CONNECTED && gPairStatus !=1){
+	if((gapProfileState == GAPROLE_CONNECTED) && (gPairStatus == BOND_PAIR_STATUS_PAIRING))
+    {
 	  GAPRole_TerminateConnection();  // 终止连接
       // 终止连接后， 需要复位从机
+      HAL_SYSTEM_RESET();
     }
   }
+  // 当主机提交密码从机验证后进入配对成功状态
   else if ( state == GAPBOND_PAIRING_STATE_BONDED )
   {
     if ( status == SUCCESS )
@@ -884,7 +1035,7 @@ static void ProcessPairStateCB( uint16 connHandle, uint8 state, uint8 status )
       HalLcdWriteString( "Bonding success", HAL_LCD_LINE_1 );
     }
   }
-
 }
+//#endif
 /*********************************************************************
 *********************************************************************/
