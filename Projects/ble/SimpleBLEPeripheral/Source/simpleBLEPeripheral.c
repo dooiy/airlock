@@ -153,7 +153,7 @@ static uint8 flag=0;
 static uint8 j=0;
 static uint8 flag1=0;
 static uint8 taskb[8]={0x40,0x60,0x20,0x30,0x10,0x90,0x80,0xc0};
-
+static uint8 access=0;
 gaprole_States_t gapProfileState = GAPROLE_INIT;
 
 bool simpleBLEChar6DoWrite2 = TRUE;
@@ -898,7 +898,10 @@ static void simpleProfileChangeCB( uint8 paramID )
   uint8 newValue;
   uint8 newChar6Value[SIMPLEPROFILE_CHAR6_LEN];
   uint8 returnBytes;
-  
+  if(access=0)
+  {
+    return ;
+  }
   switch( paramID )
   {
     case SIMPLEPROFILE_CHAR1:
@@ -999,6 +1002,7 @@ static void ProcessPairStateCB( uint16 connHandle, uint8 state, uint8 status )
       HalLcdWriteString( "Pairing success", HAL_LCD_LINE_1 );/*密码正确*/
 	  gPairStatus = BOND_PAIR_STATUS_PAIRED;
           osal_start_reload_timer( simpleBLEPeripheral_TaskID, SBP_PERIODIC_EVT, SBP_PERIODIC_EVT_PERIOD );
+          access=1;
     }
     else
     {
@@ -1007,6 +1011,7 @@ static void ProcessPairStateCB( uint16 connHandle, uint8 state, uint8 status )
 	  if(status ==8)
 	  {//已绑定
 		gPairStatus = BOND_PAIR_STATUS_PAIRED;
+                access=1;
 	  }
       else
       {
@@ -1014,7 +1019,9 @@ static void ProcessPairStateCB( uint16 connHandle, uint8 state, uint8 status )
 
         GAPRole_TerminateConnection();  // 终止连接
         // 终止连接后， 需要复位从机
-        HAL_SYSTEM_RESET();        
+        HAL_SYSTEM_RESET();
+        osal_stop_timerEx(simpleBLEPeripheral_TaskID, SBP_PERIODIC_EVT);  
+        access=0;
 	  }
       
       gPairStatus = BOND_PAIR_STATUS_PAIRING;
@@ -1026,6 +1033,8 @@ static void ProcessPairStateCB( uint16 connHandle, uint8 state, uint8 status )
 	  GAPRole_TerminateConnection();  // 终止连接
       // 终止连接后， 需要复位从机
       HAL_SYSTEM_RESET();
+      access=0;
+      osal_stop_timerEx(simpleBLEPeripheral_TaskID, SBP_PERIODIC_EVT);
     }
   }
   // 当主机提交密码从机验证后进入配对成功状态
