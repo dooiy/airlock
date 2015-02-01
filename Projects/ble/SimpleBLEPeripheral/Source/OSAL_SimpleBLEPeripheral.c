@@ -85,7 +85,7 @@
  */
 
 // The order in this table must be identical to the task initialization calls below in osalInitTask.
-const pTaskEventHandlerFn tasksArr_peripheral[] =
+const pTaskEventHandlerFn tasksArr[] =
 {
   LL_ProcessEvent,                                                  // task 0
   Hal_ProcessEvent,                                                 // task 1
@@ -103,9 +103,8 @@ const pTaskEventHandlerFn tasksArr_peripheral[] =
   SimpleBLEPeripheral_ProcessEvent                                  // task 11
 };
 
-uint8 tasksCnt;
+const uint8 tasksCnt = sizeof( tasksArr ) / sizeof( tasksArr[0] );
 uint16 *tasksEvents;
-pTaskEventHandlerFn tasksArr[12];
 
 /*********************************************************************
  * FUNCTIONS
@@ -120,12 +119,9 @@ pTaskEventHandlerFn tasksArr[12];
  *
  * @return  none
  */
-void osalInitPeripheralTasks( void )
+void osalInitTasks( void )
 {
   uint8 taskID = 0;
-
-  tasksCnt = sizeof( tasksArr_peripheral ) / sizeof( tasksArr_peripheral[0] );  
-  osal_memcpy(tasksArr, tasksArr_peripheral, sizeof( tasksArr_peripheral));    
 
   tasksEvents = (uint16 *)osal_mem_alloc( sizeof( uint16 ) * tasksCnt);
   osal_memset( tasksEvents, 0, (sizeof( uint16 ) * tasksCnt));
