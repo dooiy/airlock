@@ -274,7 +274,7 @@ extern void GAPRole_Init( uint8 task_id );
  * @return      events not processed
  */
 extern uint16 GAPRole_ProcessEvent( uint8 task_id, uint16 events );
-
+extern uint8 access=0;
 /*-------------------------------------------------------------------
 -------------------------------------------------------------------*/
 
