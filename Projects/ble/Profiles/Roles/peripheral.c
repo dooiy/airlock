@@ -50,7 +50,6 @@
 #include "gatt.h"
 #include "osal_snv.h"
 
-//#include "simpleBLEPeripheral.h"
 #include "peripheral.h"
 #include "gapbondmgr.h"
 
@@ -1063,7 +1062,6 @@ static void gapRole_ProcessGAPMsg( gapEventHdr_t *pMsg )
         else
         {
           gapRole_state = GAPROLE_WAITING;
-         
         }
 
         notify = TRUE;

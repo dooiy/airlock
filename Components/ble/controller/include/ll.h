@@ -27,7 +27,7 @@
   its documentation for any purpose.
 
   YOU FURTHER ACKNOWLEDGE AND AGREE THAT THE SOFTWARE AND DOCUMENTATION ARE
-  PROVIDED “AS IS?WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+  PROVIDED “AS IS” WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED,
   INCLUDING WITHOUT LIMITATION, ANY WARRANTY OF MERCHANTABILITY, TITLE,
   NON-INFRINGEMENT AND FITNESS FOR A PARTICULAR PURPOSE. IN NO EVENT SHALL
   TEXAS INSTRUMENTS OR ITS LICENSORS BE LIABLE OR OBLIGATED UNDER CONTRACT,
@@ -186,7 +186,7 @@ extern "C"
 #define LL_CONN_INTERVAL_MIN                           6         // 7.5ms in 1.25ms
 #define LL_CONN_INTERVAL_MAX                           3200      // 4s in 1.25ms
 #define LL_CONN_TIMEOUT_MIN                            10        // 100ms in 10ms
-#define LL_CONN_TIMEOUT_MAX                            100      // 32s in 10ms
+#define LL_CONN_TIMEOUT_MAX                            3200      // 32s in 10ms
 #define LL_SLAVE_LATENCY_MIN                           0
 #define LL_SLAVE_LATENCY_MAX                           499
 #define LL_HOP_LENGTH_MIN                              5

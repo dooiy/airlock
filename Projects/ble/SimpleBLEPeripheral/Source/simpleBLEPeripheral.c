@@ -153,6 +153,7 @@ static uint8 flag=0;
 static uint8 j=0;
 static uint8 flag1=0;
 static uint8 taskb[8]={0x40,0x60,0x20,0x30,0x10,0x90,0x80,0xc0};
+static uint8 access=0;
 gaprole_States_t gapProfileState = GAPROLE_INIT;
 
 bool simpleBLEChar6DoWrite2 = TRUE;
@@ -448,7 +449,6 @@ void SimpleBLEPeripheral_Init( uint8 task_id )
 //#if defined( BLE_BOND_PAIR )
     if(simpleBle_GetIfNeedPassword())
     {
-      access=0;
         pairMode = GAPBOND_PAIRING_MODE_INITIATE;   //配对模式，置配成等待主机的配对请求
         bonding = TRUE;
     }
@@ -581,7 +581,6 @@ uint16 SimpleBLEPeripheral_ProcessEvent( uint8 task_id, uint16 events )
 
   VOID task_id; // OSAL required parameter that isn't used in this function
   static uint8 i=0;
-  uint8 *access;
   if ( events & SYS_EVENT_MSG )
   {
     uint8 *pMsg;
@@ -602,6 +601,7 @@ uint16 SimpleBLEPeripheral_ProcessEvent( uint8 task_id, uint16 events )
   {    
     // Start the Device
     VOID GAPRole_StartDevice( &simpleBLEPeripheral_PeripheralCBs );
+
     // Start Bond Manager
     VOID GAPBondMgr_Register( &simpleBLEPeripheral_BondMgrCBs );
 
@@ -826,7 +826,6 @@ static void peripheralStateNotificationCB( gaprole_States_t newState )
       {
         #if (defined HAL_LCD) && (HAL_LCD == TRUE)
           HalLcdWriteString( "Connected",  HAL_LCD_LINE_3 );
-          access=0;
         #endif // (defined HAL_LCD) && (HAL_LCD == TRUE)
         LedSetState(HAL_LED_MODE_OFF);
         NPI_WriteTransport("Connected\r\n", 11);
@@ -899,9 +898,12 @@ static void simpleProfileChangeCB( uint8 paramID )
   uint8 newValue;
   uint8 newChar6Value[SIMPLEPROFILE_CHAR6_LEN];
   uint8 returnBytes;
+  if(access=0)
+  {
+    return ;
+  }
   switch( paramID )
   {
-    
     case SIMPLEPROFILE_CHAR1:
       SimpleProfile_GetParameter( SIMPLEPROFILE_CHAR1, &newValue, &returnBytes );
 
@@ -919,29 +921,21 @@ static void simpleProfileChangeCB( uint8 paramID )
       #endif // (defined HAL_LCD) && (HAL_LCD == TRUE)
 
       break;
-      
+    
     case SIMPLEPROFILE_CHAR6:
-                SimpleProfile_GetParameter( SIMPLEPROFILE_CHAR6, newChar6Value, &returnBytes );
-                if(access==0)
-                {
-                  break;
-                }
-
+      SimpleProfile_GetParameter( SIMPLEPROFILE_CHAR6, newChar6Value, &returnBytes );
       if(returnBytes > 0)
       {
         if(newChar6Value[0]=='1')
         {
           flag=1;
-          HalLcdWriteString("2",  HAL_LCD_LINE_4 );
         }
         
         if(newChar6Value[0]=='2')
         {
           flag=2;
-          HalLcdWriteString("2",  HAL_LCD_LINE_4 );
         }
         NPI_WriteTransport(newChar6Value,returnBytes);
-        
       }
 
       break;
@@ -978,7 +972,6 @@ static void ProcessPasscodeCB(uint8 *deviceAddr,uint16 connectionHandle,uint8 ui
 
   if(simpleBle_GetIfNeedPassword())
   {
-    access=0;
     
     //  串口输出密码
     simpleBle_PrintPassword();
@@ -1018,7 +1011,6 @@ static void ProcessPairStateCB( uint16 connHandle, uint8 state, uint8 status )
 	  if(status ==8)
 	  {//已绑定
 		gPairStatus = BOND_PAIR_STATUS_PAIRED;
-                osal_start_reload_timer( simpleBLEPeripheral_TaskID, SBP_PERIODIC_EVT, SBP_PERIODIC_EVT_PERIOD );
                 access=1;
 	  }
       else
